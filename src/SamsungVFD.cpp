@@ -67,8 +67,8 @@
 // SPI commmand/data select, will be or-ed with value
 #define VFD_SPIDATA            		0xFA   	// RW=0, RS=1
 #define VFD_SPICOMMAND				0xF8	// RW=0, RS=1
-#define VFD_SPICOMMAND16        	(SPICOMMAND << 8) 
-#define VFD_SPIDATA16           	(SPIDATA << 8)
+#define VFD_SPICOMMAND16        	(VFD_SPICOMMAND << 8) 
+#define VFD_SPIDATA16           	(VFD_SPIDATA << 8)
 
 void SamsungVFD::begin()
 {
@@ -218,7 +218,7 @@ void SamsungVFD::command(uint8_t value)
     SPI.beginTransaction(_spisettings);
 #endif
 	SAMSUNGVFD_CS_ON;
-   	_spi.transfer16(SPICOMMAND16 | value);
+   	_spi.transfer16(VFD_SPICOMMAND16 | value);
 	SAMSUNGVFD_CS_OFF;
 #ifdef SAMSUNGVFD_SPI_TRANSACTION
     SPI.endTransaction(); // release the SPI bus
@@ -231,7 +231,7 @@ size_t SamsungVFD::write(uint8_t value)
     SPI.beginTransaction(_spisettings);
 #endif
 	SAMSUNGVFD_CS_ON;
-    _spi.transfer16(SPIDATA16 | value);
+    _spi.transfer16(VFD_SPIDATA16 | value);
 	SAMSUNGVFD_CS_OFF;
 
 #ifdef SAMSUNGVFD_SPI_TRANSACTION
@@ -250,7 +250,7 @@ size_t SamsungVFD::write(const uint8_t *buffer, size_t size)
 #endif
 
 	SAMSUNGVFD_CS_ON;
-	_spi.transfer(SPIDATA);
+	_spi.transfer(VFD_SPIDATA);
 	while (size--)
 	{
 		_spi.transfer(buffer[cnt++]);
