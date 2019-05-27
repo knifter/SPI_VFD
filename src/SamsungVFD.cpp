@@ -27,42 +27,45 @@
 // constructor is called).
 
 // commands
-#define CMD_CLEARDISPLAY        0x01
-#define CMD_RETURNHOME          0x02
-#define CMD_ENTRYMODESET        0x04
-#define CMD_DISPLAYCONTROL      0x08
-#define CMD_CURSORSHIFT         0x10
-#define CMD_FUNCTIONSET         0x30
-#define CMD_SETCGRAMADDR        0x40
-#define CMD_SETDDRAMADDR        0x80
+#define CMD_CLEARDISPLAY       		0b00000001
+#define CMD_RETURNHOME          	0b00000010
+#define CMD_ENTRYMODESET        	0b00000100	// 0000 01IS
+	#define ENTRY_RIGHT          	0b00000000
+	#define ENTRY_LEFT           	0b00000010
+	#define ENTRY_INCREMENT 		0b00000001
+	#define ENTRY_DECREMENT 		0b00000000
+
+#define CMD_DISPLAYCONTROL      	0b00001000	// 00001DCB
+	#define CONTROL_DISPLAYON       0b00000100
+	#define CONTROL_DISPLAYOFF      0b00000000
+	#define CONTROL_CURSORON        0b00000010
+	#define CONTROL_CURSOROFF       0b00000000
+	#define CONTROL_BLINKON         0b00000001
+	#define CONTROL_BLINKOFF        0b00000000
+
+#define CMD_CURSORSHIFT         	0b00010000	// 0001SRxx
+	#define SHIFT_DISPLAYMOVE       0b00001000
+	#define SHIFT_CURSORMOVE        0b00000000
+	#define	SHIFT_RIGHT         	0b00000100
+	#define SHIFT_LEFT          	0b00000000
+#define CMD_FUNCTIONSET         	0b00100000
+	#define FUNCTION_DATA8			0b00010000
+	#define FUNCTION_2LINE          0b00001000 
+	#define FUNCTION_1LINE          0b00000000
+	#define FUNCTION_BRIGHTNESS25   0b00000011
+	#define FUNCTION_BRIGHTNESS50   0b00000010
+	#define FUNCTION_BRIGHTNESS75   0b00000001
+	#define FUNCTION_BRIGHTNESS100  0b00000000
+#define CMD_SETCGRAMADDR        	0b01000000 // 01aaaaaa 
+#define CMD_SETDDRAMADDR        	0b10000000 // 1aaaaaaa
 
 // flags for display entry mode
-#define VFD_ENTRYRIGHT          0x00
-#define VFD_ENTRYLEFT           0x02
-#define VFD_ENTRYSHIFTINCREMENT 0x01
-#define VFD_ENTRYSHIFTDECREMENT 0x00
 
 // flags for display on/off control
-#define VFD_DISPLAYON           0x04
-#define VFD_DISPLAYOFF          0x00
-#define VFD_CURSORON            0x02
-#define VFD_CURSOROFF           0x00
-#define VFD_BLINKON             0x01
-#define VFD_BLINKOFF            0x00
 
 // flags for display/cursor shift
-#define VFD_DISPLAYMOVE         0x08
-#define VFD_CURSORMOVE          0x00
-#define VFD_MOVERIGHT           0x04
-#define VFD_MOVELEFT            0x00
 
 // flags for function set
-#define VFD_2LINE               0x08
-#define VFD_1LINE               0x00
-#define VFD_BRIGHTNESS25        0x03
-#define VFD_BRIGHTNESS50        0x02
-#define VFD_BRIGHTNESS75        0x01
-#define VFD_BRIGHTNESS100       0x00
 
 // SPI commmand/data select, will be or-ed with value
 #define VFD_SPIDATA            		0xFA   	// RW=0, RS=1
@@ -73,15 +76,15 @@
 void SamsungVFD::begin()
 {
     // set the brightness(=0) and push the linecount with VFD_SETFUNCTION
-	_displayfunction = VFD_2LINE | VFD_BRIGHTNESS100;
+	_displayfunction = FUNCTION_2LINE | FUNCTION_DATA8| FUNCTION_BRIGHTNESS100;
 	command(CMD_FUNCTIONSET | _displayfunction);
 
     // Initialize to default text direction (for roman languages)
-    _displaymode = VFD_ENTRYLEFT | VFD_ENTRYSHIFTDECREMENT;
+    _displaymode = ENTRY_LEFT | ENTRY_DECREMENT;
     command(CMD_ENTRYMODESET | _displaymode);
 
     // turn the display on with no cursor or blinking default
-    _displaycontrol = VFD_DISPLAYON;
+    _displaycontrol = CONTROL_DISPLAYON;
     command(CMD_DISPLAYCONTROL | _displaycontrol);
 
 	// go to address 0
@@ -92,9 +95,9 @@ void SamsungVFD::begin()
 void SamsungVFD::setBrightness(uint8_t brightness)
 {
     // set the brightness (only if a valid value is passed
-    if (brightness <= VFD_BRIGHTNESS25)
+    if (brightness <= FUNCTION_BRIGHTNESS25)
     {
-        _displayfunction &= ~VFD_BRIGHTNESS25;
+        _displayfunction &= ~FUNCTION_BRIGHTNESS25;
         _displayfunction |= brightness;
 
         command(CMD_FUNCTIONSET | _displayfunction);
@@ -104,7 +107,7 @@ void SamsungVFD::setBrightness(uint8_t brightness)
 uint8_t SamsungVFD::getBrightness()
 {
     // get the brightness
-    return _displayfunction & VFD_BRIGHTNESS25;
+    return _displayfunction & FUNCTION_BRIGHTNESS25;
 }
 
 void SamsungVFD::clear()
@@ -131,9 +134,9 @@ void SamsungVFD::setCursor(uint8_t col, uint8_t row)
 void SamsungVFD::displayOn(bool on)
 {
     if (on)
-        _displaycontrol |= VFD_DISPLAYON;
+        _displaycontrol |= CONTROL_DISPLAYON;
     else
-        _displaycontrol &= ~VFD_DISPLAYON;
+        _displaycontrol &= ~CONTROL_DISPLAYON;
     command(CMD_DISPLAYCONTROL | _displaycontrol);
 }
 
@@ -141,9 +144,9 @@ void SamsungVFD::displayOn(bool on)
 void SamsungVFD::cursor(bool on)
 {
     if (on)
-        _displaycontrol |= VFD_CURSORON;
+        _displaycontrol |= CONTROL_CURSORON;
     else
-        _displaycontrol &= ~VFD_DISPLAYON;
+        _displaycontrol &= ~CONTROL_DISPLAYON;
     command(CMD_DISPLAYCONTROL | _displaycontrol);
 }
 
@@ -151,33 +154,34 @@ void SamsungVFD::cursor(bool on)
 void SamsungVFD::blink(bool on)
 {
     if (on)
-        _displaycontrol |= VFD_BLINKON;
+        _displaycontrol |= CONTROL_BLINKON;
     else
-        _displaycontrol &= ~VFD_BLINKON;
+        _displaycontrol &= ~CONTROL_BLINKON;
     command(CMD_DISPLAYCONTROL | _displaycontrol);
 }
 
 // These commands scroll the display without changing the RAM
 void SamsungVFD::scrollDisplayLeft(void)
 {
-    command(CMD_CURSORSHIFT | VFD_DISPLAYMOVE | VFD_MOVELEFT);
+    command(CMD_CURSORSHIFT | SHIFT_DISPLAYMOVE | SHIFT_LEFT);
 }
+
 void SamsungVFD::scrollDisplayRight(void)
 {
-    command(CMD_CURSORSHIFT | VFD_DISPLAYMOVE | VFD_MOVERIGHT);
+    command(CMD_CURSORSHIFT | SHIFT_DISPLAYMOVE | SHIFT_RIGHT);
 }
 
 // This is for text that flows Left to Right
 void SamsungVFD::leftToRight(void)
 {
-    _displaymode |= VFD_ENTRYLEFT;
+    _displaymode |= ENTRY_LEFT;
     command(CMD_ENTRYMODESET | _displaymode);
 }
 
 // This is for text that flows Right to Left
 void SamsungVFD::rightToLeft(void)
 {
-    _displaymode &= ~VFD_ENTRYLEFT;
+    _displaymode &= ~ENTRY_LEFT;
     command(CMD_ENTRYMODESET | _displaymode);
 }
 
@@ -185,9 +189,9 @@ void SamsungVFD::rightToLeft(void)
 void SamsungVFD::autoscroll(bool on)
 {
     if (on)
-        _displaycontrol |= VFD_ENTRYSHIFTINCREMENT;
+        _displaycontrol |= ENTRY_INCREMENT;
     else
-        _displaycontrol &= ~VFD_ENTRYSHIFTINCREMENT;
+        _displaycontrol &= ~ENTRY_INCREMENT;
     command(CMD_ENTRYMODESET | _displaymode);
 }
 
