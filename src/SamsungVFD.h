@@ -5,6 +5,7 @@
 #include <SPI.h>
 #include <inttypes.h>
 #include <Print.h>
+#include <Wire.h>
 
 // VFD Module 20T202DA2JA
 // Controller: µ PD16314
@@ -14,15 +15,13 @@
 //#define SAMSUNGVFD_SPI_TRANSACTION		// Enable using SPI.begin/endTransaction if multiple configs are used
 
 #define SAMSUNGVFD_CS_NONE				0xFF
+#define SAMSUNGVFD_ADDRESS_DEFAULT		0x96	// and +1, so 0x97 for data
 
 class SamsungVFD : public Print 
 {
     public:
-#ifdef SAMSUNGVFD_SPI_SWCS
-        SamsungVFD(SPIClass& spi, uint8_t cs = SAMSUNGVFD_CS_NONE) : _spi(spi), _cs(cs) {};
-#else
-        SamsungVFD(SPIClass& spi) : _spi(spi) {};
-#endif
+		SamsungVFD() {};
+
         void begin();
 
         void clear();
@@ -44,17 +43,13 @@ class SamsungVFD : public Print
         void setCursor(uint8_t col, uint8_t row);
 
         // Implement thsese for Print 
-        size_t write(uint8_t);
+        virtual size_t write(uint8_t) = 0;
 #ifdef SAMSUNGVFD_SPI_SWCS
 		//Needs testing on HWCS platform first
-       size_t write(const uint8_t *buffer, size_t size);
+       virtual size_t write(const uint8_t *buffer, size_t size) = 0;
 #endif
     protected:
-        void command(uint8_t);
-
-        SPIClass& _spi;
-		uint8_t _cs = -1;
-        SPISettings _spisettings = SPISettings(25000000, MSBFIRST, SPI_MODE3);
+        virtual void command(uint8_t) = 0;
 
         uint8_t _displayfunction = 0x00;
         uint8_t _displaycontrol = 0x00;
@@ -63,16 +58,39 @@ class SamsungVFD : public Print
         // uint8_t _numlines = 2;
 };
 
-// class SamsungVFD_SPI : public SamsungVFD
-// {
-//     public:
-//         SamsungVFD_SPI(SPIClass& spi, uint8_t cols = 20, uint8_t rows = 2) {};
+class SamsungVFD_SPI : public SamsungVFD
+{
+    public:
+#ifdef SAMSUNGVFD_SPI_SWCS
+        SamsungVFD_SPI(SPIClass& spi, uint8_t cs = SAMSUNGVFD_CS_NONE) : _spi(spi), _cs(cs) {};
+#else
+        SamsungVFD_SPI(SPIClass& spi) : _spi(spi) {};
+#endif
 
-//         virtual size_t write(uint8_t);
-//         virtual size_t write(const uint8_t *buffer, size_t size);
+        virtual size_t write(uint8_t);
+        virtual size_t write(const uint8_t *buffer, size_t size);
 
-//     private:
-//         virtual void command(uint8_t);
-// };
+	protected:
+        SPIClass& _spi;
+		uint8_t _cs = -1;
+        SPISettings _spisettings = SPISettings(25000000, MSBFIRST, SPI_MODE3);
+        virtual void command(uint8_t);
+};
+
+class SamsungVFD_I2C : public SamsungVFD
+{
+    public:
+        SamsungVFD_I2C(TwoWire& wire, const uint8_t addr = SAMSUNGVFD_ADDRESS_DEFAULT) : _i2caddr(addr), _wire(wire) {};
+        SamsungVFD_I2C(const uint8_t addr = SAMSUNGVFD_ADDRESS_DEFAULT) : _i2caddr(addr), _wire(Wire) {};
+
+        virtual size_t write(uint8_t);
+        virtual size_t write(const uint8_t *buffer, size_t size);
+
+	protected:
+        virtual void command(uint8_t);
+
+        uint8_t _i2caddr;
+        TwoWire& _wire = Wire;
+};
 
 #endif

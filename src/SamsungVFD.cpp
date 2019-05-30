@@ -216,7 +216,7 @@ void SamsungVFD::createChar(uint8_t location, uint8_t charmap[])
 	#define SAMSUNGVFD_CS_OFF
 #endif
 
-void SamsungVFD::command(uint8_t value)
+void SamsungVFD_SPI::command(uint8_t value)
 {
 #ifdef SAMSUNGVFD_SPI_TRANSACTION
     SPI.beginTransaction(_spisettings);
@@ -229,7 +229,7 @@ void SamsungVFD::command(uint8_t value)
 #endif
 };
 
-size_t SamsungVFD::write(uint8_t value)
+size_t SamsungVFD_SPI::write(uint8_t value)
 {
 #ifdef SAMSUNGVFD_SPI_TRANSACTION
     SPI.beginTransaction(_spisettings);
@@ -246,7 +246,7 @@ size_t SamsungVFD::write(uint8_t value)
 
 // Unsure if this loop would work on a HW CS platform like ESP32
 #ifdef SAMSUNGVFD_SPI_SWCS
-size_t SamsungVFD::write(const uint8_t *buffer, size_t size)
+size_t SamsungVFD_SPI::write(const uint8_t *buffer, size_t size)
 {
     uint8_t cnt = 0;
 #ifdef SAMSUNGVFD_SPI_TRANSACTION
@@ -270,3 +270,34 @@ size_t SamsungVFD::write(const uint8_t *buffer, size_t size)
 
 #undef VFD_CHIPSELECT_ON
 #undef VFD_CHIPSELECT_OFF
+
+
+void SamsungVFD_I2C::command(uint8_t cmd)
+{
+	_wire.beginTransmission(_i2caddr);
+	_wire.write(cmd);
+	_wire.endTransmission();
+};
+
+size_t SamsungVFD_I2C::write(uint8_t value)
+{
+	_wire.beginTransmission(_i2caddr+1);
+	_wire.write(value);
+	_wire.endTransmission();
+
+    return 1;
+}
+
+size_t SamsungVFD_I2C::write(const uint8_t *buffer, size_t size)
+{
+    uint8_t cnt = 0;
+
+	_wire.beginTransmission(_i2caddr+1);
+	while (size--)
+	{
+		_wire.write(buffer[cnt++]);
+	};
+	_wire.endTransmission();
+
+    return cnt;
+}
