@@ -70,8 +70,8 @@
 // SPI commmand/data select, will be or-ed with value
 #define VFD_DATA            0xFA   	// RW=0, RS=1
 #define VFD_COMMAND		    0xF8	// RW=0, RS=1
-#define VFD_COMMAND16     	(VFD_SPICOMMAND << 8) 
-#define VFD_DATA16         	(VFD_SPIDATA << 8)
+#define VFD_COMMAND16     	(VFD_COMMAND << 8) 
+#define VFD_DATA16         	(VFD_DATA << 8)
 #define REG_VFD_CONTROL     0xF0
 #define REG_VFD_DATA        0xF1
 
@@ -256,7 +256,7 @@ size_t SamsungVFD_SPI::write(const uint8_t *buffer, size_t size)
 #endif
 
 	SAMSUNGVFD_CS_ON;
-	_spi.transfer(VFD_SPIDATA);
+	_spi.transfer(VFD_DATA);
 	while (size--)
 	{
 		_spi.transfer(buffer[cnt++]);
