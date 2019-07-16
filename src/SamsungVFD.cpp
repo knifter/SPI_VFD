@@ -68,10 +68,12 @@
 // flags for function set
 
 // SPI commmand/data select, will be or-ed with value
-#define VFD_SPIDATA            		0xFA   	// RW=0, RS=1
-#define VFD_SPICOMMAND				0xF8	// RW=0, RS=1
-#define VFD_SPICOMMAND16        	(VFD_SPICOMMAND << 8) 
-#define VFD_SPIDATA16           	(VFD_SPIDATA << 8)
+#define VFD_DATA            0xFA   	// RW=0, RS=1
+#define VFD_COMMAND		    0xF8	// RW=0, RS=1
+#define VFD_COMMAND16     	(VFD_SPICOMMAND << 8) 
+#define VFD_DATA16         	(VFD_SPIDATA << 8)
+#define REG_VFD_CONTROL     0xF0
+#define REG_VFD_DATA        0xF1
 
 void SamsungVFD::begin()
 {
@@ -222,7 +224,7 @@ void SamsungVFD_SPI::command(uint8_t value)
     SPI.beginTransaction(_spisettings);
 #endif
 	SAMSUNGVFD_CS_ON;
-   	_spi.transfer16(VFD_SPICOMMAND16 | value);
+   	_spi.transfer16(VFD_COMMAND16 | value);
 	SAMSUNGVFD_CS_OFF;
 #ifdef SAMSUNGVFD_SPI_TRANSACTION
     SPI.endTransaction(); // release the SPI bus
@@ -235,7 +237,7 @@ size_t SamsungVFD_SPI::write(uint8_t value)
     SPI.beginTransaction(_spisettings);
 #endif
 	SAMSUNGVFD_CS_ON;
-    _spi.transfer16(VFD_SPIDATA16 | value);
+    _spi.transfer16(VFD_DATA16 | value);
 	SAMSUNGVFD_CS_OFF;
 
 #ifdef SAMSUNGVFD_SPI_TRANSACTION
@@ -275,13 +277,15 @@ size_t SamsungVFD_SPI::write(const uint8_t *buffer, size_t size)
 void SamsungVFD_I2C::command(uint8_t cmd)
 {
 	_wire.beginTransmission(_i2caddr);
+    _wire.write(VFD_COMMAND);
 	_wire.write(cmd);
 	_wire.endTransmission();
 };
 
 size_t SamsungVFD_I2C::write(uint8_t value)
 {
-	_wire.beginTransmission(_i2caddr+1);
+	_wire.beginTransmission(_i2caddr);
+    _wire.write(VFD_DATA);
 	_wire.write(value);
 	_wire.endTransmission();
 
@@ -292,7 +296,8 @@ size_t SamsungVFD_I2C::write(const uint8_t *buffer, size_t size)
 {
     uint8_t cnt = 0;
 
-	_wire.beginTransmission(_i2caddr+1);
+	_wire.beginTransmission(_i2caddr);
+    _wire.write(REG_VFD_DATA);
 	while (size--)
 	{
 		_wire.write(buffer[cnt++]);

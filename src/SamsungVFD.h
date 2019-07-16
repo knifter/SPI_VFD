@@ -14,8 +14,8 @@
 //#define SAMSUNGVFD_SPI_SWCS				// Enable Software CS control, with UseHwCs() its faster without
 //#define SAMSUNGVFD_SPI_TRANSACTION		// Enable using SPI.begin/endTransaction if multiple configs are used
 
-#define SAMSUNGVFD_CS_NONE				0xFF
-#define SAMSUNGVFD_ADDRESS_DEFAULT		0x96	// and +1, so 0x97 for data
+#define SAMSUNGVFD_CS_NONE			0xFF
+#define SAMSUNGVFD_ADDRESS_DEFAULT		0x44	// and +1, so 0x97 for data
 
 class SamsungVFD : public Print 
 {
