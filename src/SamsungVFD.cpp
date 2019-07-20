@@ -72,8 +72,6 @@
 #define VFD_COMMAND		    0xF8	// RW=0, RS=1
 #define VFD_COMMAND16     	(VFD_COMMAND << 8) 
 #define VFD_DATA16         	(VFD_DATA << 8)
-#define REG_VFD_CONTROL     0xF0
-#define REG_VFD_DATA        0xF1
 
 void SamsungVFD::begin()
 {
@@ -297,7 +295,7 @@ size_t SamsungVFD_I2C::write(const uint8_t *buffer, size_t size)
     uint8_t cnt = 0;
 
 	_wire.beginTransmission(_i2caddr);
-    _wire.write(REG_VFD_DATA);
+    _wire.write(VFD_DATA);
 	while (size--)
 	{
 		_wire.write(buffer[cnt++]);
